@@ -367,6 +367,150 @@ public class AssignmentControllerTest {
         assertTrue(assignments.size() > 0);
         // Check that the assignment has a grade of 100
         assertNull(assignments.get(0).score());
+    }
 
+    @Test
+    public void createAssignment() {
+        // Login as instructor and get the security token
+        // Instructor information
+        String instructorEmail = "ted@csumb.edu";
+        String password = "ted2025";
+        // Get login response
+        EntityExchangeResult<LoginDTO> login_dto =  client.get().uri("/login")
+                .headers(headers -> headers.setBasicAuth(instructorEmail, password))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(LoginDTO.class).returnResult();
+        // Get security token
+        String jwt = login_dto.getResponseBody().jwt();
+        assertNotNull(jwt);
+
+        // Login as  test instructor and get the security token
+        // Get login response
+        login_dto =  client.get().uri("/login")
+                .headers(headers -> headers.setBasicAuth(testInstructorEmail, testPassword))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(LoginDTO.class).returnResult();
+        // Get security token
+        String test_jwt = login_dto.getResponseBody().jwt();
+        assertNotNull(test_jwt);
+
+        // Try to create assignment with invalid instructor email
+        // Create AssignmentDTO
+        AssignmentDTO adto = new AssignmentDTO(
+            0, 
+            "Assignment", 
+            "1985-09-13", 
+            "cst489", 
+            1, 
+            1
+        );
+        // Try to create assignment with POST request
+        client.post()
+            .uri("/assignments")
+            .headers(headers -> headers.setBearerAuth(test_jwt))
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(adto)
+            .exchange()
+            .expectStatus().isBadRequest()
+            .expectBody()
+            .jsonPath("$.errors[?(@=='invalid instructor email')]").exists()
+            .returnResult();
+
+        // Try to create assignment with invalid section
+        // Create AssignmentDTO
+        adto = new AssignmentDTO(
+            0, 
+            "Assignment", 
+            "1985-09-13", 
+            "cst489", 
+            1, 
+            0
+        );
+        // Try to create assignment with POST request
+        client.post()
+            .uri("/assignments")
+            .headers(headers -> headers.setBearerAuth(jwt))
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(adto)
+            .exchange()
+            .expectStatus().isBadRequest()
+            .expectBody()
+            .jsonPath("$.errors[?(@=='invalid section')]").exists()
+            .returnResult();
+
+        // Try to create assignment with early date
+        // Create AssignmentDTO
+        adto = new AssignmentDTO(
+            0, 
+            "Assignment", 
+            "1985-09-13", 
+            "cst489", 
+            1, 
+            1
+        );
+        // Try to create assignment with POST request
+        client.post()
+            .uri("/assignments")
+            .headers(headers -> headers.setBearerAuth(jwt))
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(adto)
+            .exchange()
+            .expectStatus().isBadRequest()
+            .expectBody()
+            .jsonPath("$.errors[?(@=='invalid due date')]").exists()
+            .returnResult();
+
+        // Try to create assignment with late date
+        // Create AssignmentDTO
+        adto = new AssignmentDTO(
+            0, 
+            "Assignment", 
+            "2077-11-31", 
+            "cst489", 
+            1, 
+            1
+        );
+        // Try to create assignment with POST request
+        client.post()
+            .uri("/assignments")
+            .headers(headers -> headers.setBearerAuth(jwt))
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(adto)
+            .exchange()
+            .expectStatus().isBadRequest()
+            .expectBody()
+            .jsonPath("$.errors[?(@=='invalid due date')]").exists()
+            .returnResult();
+
+        // Create valid assignment
+        // Create AssignmentDTO
+        adto = new AssignmentDTO(
+            0, 
+            "Assignment", 
+            "2026-09-30", 
+            "cst489", 
+            1, 
+            1
+        );
+        // Try to create assignment with POST request
+        EntityExchangeResult<AssignmentDTO> assignmentResponse = client.post()
+            .uri("/assignments")
+            .headers(headers -> headers.setBearerAuth(jwt))
+            .accept(MediaType.APPLICATION_JSON)
+            .bodyValue(adto)
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(AssignmentDTO.class)
+            .returnResult();
+        AssignmentDTO assignment = assignmentResponse.getResponseBody();
+        // Check that dto was returned
+        assertNotNull(assignment);
+        // Check that the assignment was created in the database
+        Assignment actualAssignment = assignmentRepository.findById(assignment.id()).get();
+        assertNotNull(actualAssignment);
     }
 }
