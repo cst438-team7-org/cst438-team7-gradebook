@@ -97,7 +97,36 @@ public class AssignmentController {
 
         // verify that user is the instructor for the section
         //  return list of assignments for the Section
-        return null;
+
+        // Instructor information
+        String instructorEmail = principal.getName();
+        
+        // Get section from the database
+        Section section = sectionRepository.findById(secNo).orElse(null);
+
+        // Check query validity
+        // Check that section exists
+        if (section == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid section");
+        }
+        // Check that the user is the instructor for the section
+        if (!instructorEmail.equals(section.getInstructorEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid instructor email");
+        }
+
+        // Return list of assignments for the section
+        return assignmentRepository.findBySectionNo(secNo)
+        .stream()
+        .map(a ->
+            new AssignmentDTO(
+                a.getAssignmentId(),
+                a.getTitle(),
+                a.getDueDate().toString(),
+                section.getCourse().getCourseId(),
+                section.getSectionId(),
+                section.getSectionNo()
+            )
+        ).toList();
     }
 
 
