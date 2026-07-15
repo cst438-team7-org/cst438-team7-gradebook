@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.cst438.domain.Assignment;
 import com.cst438.domain.AssignmentRepository;
+import com.cst438.domain.Grade;
 import com.cst438.domain.GradeRepository;
 import com.cst438.domain.Section;
 import com.cst438.domain.SectionRepository;
@@ -280,6 +281,29 @@ public class AssignmentController {
 		//  Grade entity exists.
 		//  hint: use the GradeRepository findByStudentEmailAndAssignmentId
         //  If assignment has not been graded, return a null score.
-        return null;
+
+        // Student information
+        String email = principal.getName();
+
+        return assignmentRepository.findByStudentEmailAndYearAndSemester(email, year, semester)
+            .stream()
+            .map(a -> {
+                // Get score
+                Integer score = null;
+                Grade grade = gradeRepository.findByStudentEmailAndAssignmentId(email, a.getAssignmentId());
+                if(grade != null) {
+                    score = grade.getScore();
+                }
+
+                // Create AssignmentStudentDTO
+                return new AssignmentStudentDTO(
+                    a.getAssignmentId(),
+                    a.getTitle(),
+                    a.getDueDate(),
+                    a.getSection().getCourse().getCourseId(),
+                    a.getSection().getSectionId(),
+                    score
+                );
+            }).toList();
     }
 }
