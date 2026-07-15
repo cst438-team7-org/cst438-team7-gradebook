@@ -164,7 +164,50 @@ public class AssignmentController {
         //  update Assignment Entity.  only title and dueDate fields can be changed.
         //  user must be instructor of the Section
         
-        return null;
+        // Instructor information
+        String instructorEmail = principal.getName();
+
+        // Get assignment from the database
+        Assignment a = assignmentRepository.findById(dto.id()).orElse(null);
+        // Check that assignment exists
+        if (a == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid assignment");
+        }
+
+        // Get section
+        Section section = a.getSection();
+
+        // Check that the user is the instructor for the section
+        if (!instructorEmail.equals(section.getInstructorEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid instructor email");
+        }
+
+        // Check that due date is valid
+        // Get term
+        Term term = section.getTerm();
+        Date dueDate = Date.valueOf(dto.dueDate());
+        int startCompare = term.getStartDate().compareTo(dueDate);
+        int endCompare = term.getEndDate().compareTo(dueDate);
+        if (startCompare > 0 || endCompare < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid due date");
+        }
+
+        // Set assignment title and due date
+        a.setTitle(dto.title());
+        a.setDueDate(dueDate);
+
+        // Save assignment
+        assignmentRepository.save(a);
+
+        // Return AssignmentDTO
+        return new AssignmentDTO(
+            a.getAssignmentId(),
+            a.getTitle(),
+            a.getDueDate().toString(),
+            section.getCourse().getCourseId(),
+            section.getSectionId(),
+            section.getSectionNo()
+        );
     }
 
 
