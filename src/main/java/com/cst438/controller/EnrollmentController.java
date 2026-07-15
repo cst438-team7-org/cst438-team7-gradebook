@@ -16,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -48,10 +47,25 @@ public class EnrollmentController {
 		// use the EnrollmentRepository findEnrollmentsBySectionNoOrderByStudentName
 		// to get a list of Enrollments for the given sectionNo.
 		// Return a list of EnrollmentDTOs
-        List<Enrollment> enrollments = enrollmentRepository.findEnrollmentsBySectionNoOrderByStudentName(sectionNo);
-        List<EnrollmentDTO> dto = new ArrayList<>();
-
-        return null;
+        return enrollmentRepository.findEnrollmentsBySectionNoOrderByStudentName(sectionNo)
+                .stream()
+                .map(e -> new EnrollmentDTO(
+                        e.getEnrollmentId(),
+                        e.getGrade(),
+                        e.getStudent().getId(),
+                        e.getStudent().getName(),
+                        e.getStudent().getEmail(),
+                        e.getSection().getCourse().getCourseId(),
+                        e.getSection().getCourse().getTitle(),
+                        e.getSection().getSectionId(),
+                        e.getSection().getSectionNo(),
+                        e.getSection().getBuilding(),
+                        e.getSection().getRoom(),
+                        e.getSection().getTimes(),
+                        e.getSection().getCourse().getCredits(),
+                        e.getSection().getTerm().getYear(),
+                        e.getSection().getTerm().getSemester()
+                )).toList();
     }
 
     // instructor updates enrollment grades
