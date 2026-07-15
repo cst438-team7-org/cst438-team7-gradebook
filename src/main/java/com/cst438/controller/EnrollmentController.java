@@ -1,3 +1,8 @@
+/**
+ * Task: Code enrollment controller
+ * Assignee: JianMitchell
+ */
+
 package com.cst438.controller;
 
 import com.cst438.domain.*;
