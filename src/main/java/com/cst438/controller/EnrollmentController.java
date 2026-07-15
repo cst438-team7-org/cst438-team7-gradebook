@@ -43,6 +43,15 @@ public class EnrollmentController {
             @PathVariable("sectionNo") int sectionNo, Principal principal ) {
 				
 		// check that the sectionNo belongs to the logged in instructor.
+        Section section = sectionRepository.findById(sectionNo).orElse(null);
+
+        if (section == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "section not found " + sectionNo);
+        }
+
+        if (!section.getInstructorEmail().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not the instructor for this section");
+        }
 		
 		// use the EnrollmentRepository findEnrollmentsBySectionNoOrderByStudentName
 		// to get a list of Enrollments for the given sectionNo.
