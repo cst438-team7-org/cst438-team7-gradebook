@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -47,6 +48,8 @@ public class EnrollmentController {
 		// use the EnrollmentRepository findEnrollmentsBySectionNoOrderByStudentName
 		// to get a list of Enrollments for the given sectionNo.
 		// Return a list of EnrollmentDTOs
+        List<Enrollment> enrollments = enrollmentRepository.findEnrollmentsBySectionNoOrderByStudentName(sectionNo);
+        List<EnrollmentDTO> dto = new ArrayList<>();
 
         return null;
     }
