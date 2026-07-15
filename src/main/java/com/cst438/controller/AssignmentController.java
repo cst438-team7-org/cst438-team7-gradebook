@@ -1,24 +1,27 @@
 package com.cst438.controller;
 
-import com.cst438.domain.*;
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.cst438.domain.AssignmentRepository;
+import com.cst438.domain.GradeRepository;
+import com.cst438.domain.SectionRepository;
+import com.cst438.domain.UserRepository;
 import com.cst438.dto.AssignmentDTO;
 import com.cst438.dto.AssignmentStudentDTO;
 import com.cst438.dto.SectionDTO;
+
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-
-
-import java.security.Principal;
-import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 public class AssignmentController {
@@ -49,7 +52,29 @@ public class AssignmentController {
             Principal principal)  {
         // return the Sections that have instructorEmail for the 
 		// logged in instructor user for the given term.
-        return null;
+
+        // Get instructor name and email
+        String instructorEmail = principal.getName();
+        String instructorName = userRepository.findByEmail(instructorEmail).getName();
+
+        return sectionRepository
+        .findByInstructorEmailAndYearAndSemester(instructorEmail, year, semester)
+        .stream()
+        .map(s ->
+            new SectionDTO(
+                s.getSectionNo(), // secNo
+                s.getTerm().getYear(), // year
+                s.getTerm().getSemester(), // semester
+                s.getCourse().getCourseId(), // courseId
+                s.getCourse().getTitle(), // title
+                s.getSectionId(), // secId
+                s.getBuilding(), // building
+                s.getRoom(), // room
+                s.getTimes(), // times
+                instructorName, // instructorName,
+                instructorEmail // instructorEmail
+            )
+        ).toList();
     }
 
     // instructor lists assignments for a section.
