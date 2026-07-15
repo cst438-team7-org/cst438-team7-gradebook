@@ -217,6 +217,26 @@ public class AssignmentController {
         // verify that user is the instructor of the section
         // delete the Assignment entity
         
+        // Instructor information
+        String instructorEmail = principal.getName();
+
+        // Get assignment from the database
+        Assignment a = assignmentRepository.findById(assignmentId).orElse(null);
+        // Check that assignment exists
+        if (a == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid assignment");
+        }
+
+        // Get section
+        Section section = a.getSection();
+
+        // Check that the user is the instructor for the section
+        if (!instructorEmail.equals(section.getInstructorEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid instructor email");
+        }
+
+        // Delete assignment
+        assignmentRepository.deleteById(assignmentId);
     }
 
     // student lists their assignments/grades  ordered by due date
