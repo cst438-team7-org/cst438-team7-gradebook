@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.cst438.domain.*;
 import com.cst438.dto.*;
@@ -19,9 +20,10 @@ import com.cst438.dto.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AssignmentControllerUnitTest {
 
-    String testInstructorEmail = "instructor@csumb.edu";
-    String testPassword = "admin";
-    String testStudentEmail = "student@csumb.edu";
+    // Test data information
+    static String testInstructorEmail = "instructor@csumb.edu";
+    static String testPassword = "test";
+    static String testStudentEmail = "student@csumb.edu";
 
     @Autowired
     private WebTestClient client;
@@ -54,11 +56,15 @@ public class AssignmentControllerUnitTest {
         // Get Sam
         User sam = userRepository.findByEmail("sam@csumb.edu");
 
+        // Encode password for test users
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        String encodedTestPassword = passwordEncoder.encode(testPassword);
+
         // Add test instructor
         User instructor = new User();
         instructor.setId(4);
-        instructor.setEmail("instructor@csumb.edu");
-        instructor.setPassword("$2a$10$8cjz47bjbR4Mn8GMg9IZx.vyjhLXR/SKKMSZ9.mP9vpMu0ssKi8GW");
+        instructor.setEmail(testInstructorEmail);
+        instructor.setPassword(encodedTestPassword);
         instructor.setType("INSTRUCTOR");
         instructor.setName("Instructor");
         userRepository.save(instructor);
@@ -66,8 +72,8 @@ public class AssignmentControllerUnitTest {
         // Add test student
         User student = new User();
         student.setId(5);
-        student.setEmail("student@csumb.edu");
-        student.setPassword("$2a$10$8cjz47bjbR4Mn8GMg9IZx.vyjhLXR/SKKMSZ9.mP9vpMu0ssKi8GW");
+        student.setEmail(testStudentEmail);
+        student.setPassword(encodedTestPassword);
         student.setType("STUDENT");
         student.setName("Student");
         userRepository.save(student);
