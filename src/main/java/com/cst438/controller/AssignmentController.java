@@ -2,6 +2,7 @@ package com.cst438.controller;
 
 import java.security.Principal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -140,19 +141,15 @@ public class AssignmentController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid instructor email");
         }
         // Check that due date is valid
-        // Get term
-        Term term = section.getTerm();
-        Date dueDate = Date.valueOf(dto.dueDate());
-        int startCompare = term.getStartDate().compareTo(dueDate);
-        int endCompare = term.getEndDate().compareTo(dueDate);
-        if (startCompare > 0 || endCompare < 0) {
+        LocalDate dueDate = checkDueDate(dto.dueDate(), section.getTerm());
+        if (dueDate == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid due date");
         }
 
         // Create and save Assignment
         Assignment a = new Assignment();
         a.setTitle(dto.title());
-        a.setDueDate(dueDate);
+        a.setDueDate(Date.valueOf(dueDate));
         a.setSection(section);
         assignmentRepository.save(a);
 
@@ -192,19 +189,18 @@ public class AssignmentController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid instructor email");
         }
 
-        // Check that due date is valid
-        // Get term
-        Term term = section.getTerm();
-        Date dueDate = Date.valueOf(dto.dueDate());
-        int startCompare = term.getStartDate().compareTo(dueDate);
-        int endCompare = term.getEndDate().compareTo(dueDate);
-        if (startCompare > 0 || endCompare < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid due date");
+        // Check that due date is valid if a new one was provided
+        if(dto.dueDate() != null && !dto.dueDate().isEmpty()) {
+            LocalDate dueDate = checkDueDate(dto.dueDate(), section.getTerm());
+            if (dueDate == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid due date");
+            }
+            // Set assignment due date
+            a.setDueDate(Date.valueOf(dueDate));
         }
 
-        // Set assignment title and due date
+        // Set assignment title
         a.setTitle(dto.title());
-        a.setDueDate(dueDate);
 
         // Save assignment
         assignmentRepository.save(a);
@@ -285,5 +281,32 @@ public class AssignmentController {
                     score
                 );
             }).toList();
+    }
+
+    /**
+     * Check if the due date is valid for the given term.
+     * Converts due date and term start and end dates to LocalDate and compares them.
+     * @param dueDateStr A String from the AssignmentDTO dueDate field.
+     * @param term The Term entity for the section of the assignment.
+     * @return A LocalDate instance if the due date is valid, or null if it is invalid.
+     */
+    private LocalDate checkDueDate(String dueDateStr, Term term) {
+        LocalDate dueDate;
+        try {
+            // Get dates
+            dueDate = LocalDate.parse(dueDateStr);
+            LocalDate startDate = term.getStartDate().toLocalDate();
+            LocalDate endCompare = term.getEndDate().toLocalDate();
+            // Compare dates
+            if (dueDate.isBefore(startDate) || dueDate.isAfter(endCompare)) {
+                return null;
+            }
+        } catch (Exception e) {
+            // Return null if due date is invalid (e.g. 2024-02-30)
+            return null;
+        }
+
+        // Return due date if it is valid
+        return dueDate;
     }
 }

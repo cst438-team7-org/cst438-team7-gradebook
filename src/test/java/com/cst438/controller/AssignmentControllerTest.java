@@ -292,7 +292,7 @@ public class AssignmentControllerTest {
         adto = new AssignmentDTO(
             0, 
             "Assignment", 
-            "2077-11-31", 
+            "2077-11-30", 
             "cst489", 
             1, 
             1
