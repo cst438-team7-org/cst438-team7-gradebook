@@ -5,6 +5,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +22,14 @@ import com.cst438.dto.*;
 public class AssignmentControllerUnitTest {
 
     // Test data information
+    // Ids
     static int testAssignmentId;
     static int testEnrollmentId = 998;
     static int samEnrollmentId = 999;
     static int testGradeId;
+    static int testInstructorId;
+    static int testStudentId;
+    // Emails and password for test users
     static String testInstructorEmail = "instructor@csumb.edu";
     static String testPassword = "test";
     static String testStudentEmail = "student@csumb.edu";
@@ -72,6 +77,7 @@ public class AssignmentControllerUnitTest {
         instructor.setType("INSTRUCTOR");
         instructor.setName("Instructor");
         userRepository.save(instructor);
+        testInstructorId = instructor.getId();
 
         // Add test student
         User student = new User();
@@ -81,6 +87,7 @@ public class AssignmentControllerUnitTest {
         student.setType("STUDENT");
         student.setName("Student");
         userRepository.save(student);
+        testStudentId = student.getId();
 
         // Add test assignment
         Assignment assignment = new Assignment();
@@ -114,6 +121,27 @@ public class AssignmentControllerUnitTest {
         // Update static field for grade id
         testGradeId = grade.getGradeId();
     }
+
+    @AfterAll
+    public static void removeTestData(
+        @Autowired AssignmentRepository assignmentRepository,
+        @Autowired EnrollmentRepository enrollmentRepository,
+        @Autowired GradeRepository gradeRepository,
+        @Autowired UserRepository userRepository) {
+            // Remove test grade
+            gradeRepository.deleteById(testGradeId);
+
+            // Remove test enrollments
+            enrollmentRepository.deleteById(testEnrollmentId);
+            enrollmentRepository.deleteById(samEnrollmentId);
+
+            // Remove test assignment
+            assignmentRepository.deleteById(testAssignmentId);
+
+            // Remove test users
+            userRepository.deleteById(testInstructorId);
+            userRepository.deleteById(testStudentId);
+        }
 
     @Test
     public void assignmentCreateEditDelete() {
