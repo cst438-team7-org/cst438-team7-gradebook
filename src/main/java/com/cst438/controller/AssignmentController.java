@@ -38,7 +38,7 @@ public class AssignmentController {
     @GetMapping("/sections")
     @PreAuthorize("hasAuthority('SCOPE_ROLE_INSTRUCTOR')")
     public List<SectionDTO> getSectionsForInstructor(
-            @RequestParam("year") int year ,
+            @RequestParam("year") int year,
             @RequestParam("semester") String semester,
             Principal principal)  {
         // return the Sections that have instructorEmail for the 
