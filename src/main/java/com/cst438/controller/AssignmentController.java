@@ -11,7 +11,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.cst438.domain.*;
 import com.cst438.dto.*;
-import com.cst438.service.RegistrarServiceProxy;
 
 import jakarta.validation.Valid;
 
@@ -22,20 +21,17 @@ public class AssignmentController {
     private final AssignmentRepository assignmentRepository;
     private final GradeRepository gradeRepository;
     private final UserRepository userRepository;
-    private final RegistrarServiceProxy registrar;
 
     public AssignmentController(
             SectionRepository sectionRepository,
             AssignmentRepository assignmentRepository,
             GradeRepository gradeRepository,
-            UserRepository userRepository,
-            RegistrarServiceProxy registrar
+            UserRepository userRepository
     ) {
         this.sectionRepository = sectionRepository;
         this.assignmentRepository = assignmentRepository;
         this.gradeRepository = gradeRepository;
         this.userRepository = userRepository;
-        this.registrar = registrar;
     }
 
     // get Sections for an instructor
