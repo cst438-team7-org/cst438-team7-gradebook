@@ -21,6 +21,10 @@ import com.cst438.dto.*;
 public class AssignmentControllerUnitTest {
 
     // Test data information
+    static int testAssignmentId;
+    static int testEnrollmentId = 998;
+    static int samEnrollmentId = 999;
+    static int testGradeId;
     static String testInstructorEmail = "instructor@csumb.edu";
     static String testPassword = "test";
     static String testStudentEmail = "student@csumb.edu";
@@ -62,7 +66,7 @@ public class AssignmentControllerUnitTest {
 
         // Add test instructor
         User instructor = new User();
-        instructor.setId(4);
+        instructor.setId(998);
         instructor.setEmail(testInstructorEmail);
         instructor.setPassword(encodedTestPassword);
         instructor.setType("INSTRUCTOR");
@@ -71,7 +75,7 @@ public class AssignmentControllerUnitTest {
 
         // Add test student
         User student = new User();
-        student.setId(5);
+        student.setId(999);
         student.setEmail(testStudentEmail);
         student.setPassword(encodedTestPassword);
         student.setType("STUDENT");
@@ -84,17 +88,19 @@ public class AssignmentControllerUnitTest {
         assignment.setDueDate(Date.valueOf("2026-09-30"));
         assignment.setSection(section);
         assignmentRepository.save(assignment);
+        // Update static field for assignment id
+        testAssignmentId = assignment.getAssignmentId();
 
         // Add test enrollments
         // Test enrollment for Sam
         Enrollment enrollmentSam = new Enrollment();
-        enrollmentSam.setEnrollmentId(0);
+        enrollmentSam.setEnrollmentId(samEnrollmentId);
         enrollmentSam.setSection(section);
         enrollmentSam.setStudent(sam);
         enrollmentRepository.save(enrollmentSam);
         // Test enrollment for Student
         Enrollment enrollmentStudent = new Enrollment();
-        enrollmentStudent.setEnrollmentId(1);
+        enrollmentStudent.setEnrollmentId(testEnrollmentId);
         enrollmentStudent.setSection(section);
         enrollmentStudent.setStudent(student);
         enrollmentRepository.save(enrollmentStudent);
@@ -105,6 +111,8 @@ public class AssignmentControllerUnitTest {
         grade.setEnrollment(enrollmentSam);
         grade.setScore(100);
         gradeRepository.save(grade);
+        // Update static field for grade id
+        testGradeId = grade.getGradeId();
     }
 
     @Test
@@ -343,7 +351,7 @@ public class AssignmentControllerUnitTest {
 
         // Try to delete assignment with invalid instructor name
         client.delete()
-            .uri("/assignments/6000")
+            .uri("/assignments/" + testAssignmentId)
             .headers(headers -> headers.setBearerAuth(test_jwt))
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
@@ -383,7 +391,7 @@ public class AssignmentControllerUnitTest {
         assertNotNull(test_jwt);
 
         // Get original assignment
-        Assignment originalAssignment = assignmentRepository.findById(6000).get();
+        Assignment originalAssignment = assignmentRepository.findById(testAssignmentId).get();
 
         // Try to update assignment with invalid assignment id
         // Create AssignmentDTO
