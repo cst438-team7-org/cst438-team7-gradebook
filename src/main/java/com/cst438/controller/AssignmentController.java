@@ -9,18 +9,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.cst438.domain.Assignment;
-import com.cst438.domain.AssignmentRepository;
-import com.cst438.domain.Grade;
-import com.cst438.domain.GradeRepository;
-import com.cst438.domain.Section;
-import com.cst438.domain.SectionRepository;
-import com.cst438.domain.Term;
-import com.cst438.domain.TermRepository;
-import com.cst438.domain.UserRepository;
-import com.cst438.dto.AssignmentDTO;
-import com.cst438.dto.AssignmentStudentDTO;
-import com.cst438.dto.SectionDTO;
+import com.cst438.domain.*;
+import com.cst438.dto.*;
 import com.cst438.service.RegistrarServiceProxy;
 
 import jakarta.validation.Valid;
