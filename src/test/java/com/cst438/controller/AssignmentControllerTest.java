@@ -15,10 +15,7 @@ import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.cst438.domain.*;
-import com.cst438.dto.AssignmentDTO;
-import com.cst438.dto.AssignmentStudentDTO;
-import com.cst438.dto.LoginDTO;
-import com.cst438.dto.SectionDTO;
+import com.cst438.dto.*;
 import com.cst438.service.RegistrarServiceProxy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
