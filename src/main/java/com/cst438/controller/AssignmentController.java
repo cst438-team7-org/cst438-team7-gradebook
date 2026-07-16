@@ -115,7 +115,7 @@ public class AssignmentController {
     @PreAuthorize("hasAuthority('SCOPE_ROLE_INSTRUCTOR')")
     public AssignmentDTO createAssignment(
             @Valid @RequestBody AssignmentDTO dto,
-            Principal principal) throws Exception {
+            Principal principal) {
         
         //  user must be the instructor for the Section
 		//  check that assignment dueDate is between start date and 
