@@ -48,6 +48,7 @@ public class AssignmentController {
         String instructorEmail = principal.getName();
         String instructorName = userRepository.findByEmail(instructorEmail).getName();
 
+        // Return list of SectionDTOs
         return sectionRepository
         .findByInstructorEmailAndYearAndSemester(instructorEmail, year, semester)
         .stream()
