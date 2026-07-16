@@ -1,7 +1,6 @@
 package com.cst438.controller;
 
 import java.sql.Date;
-import java.sql.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
