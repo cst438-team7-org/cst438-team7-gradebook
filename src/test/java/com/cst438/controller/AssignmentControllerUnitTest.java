@@ -17,7 +17,7 @@ import com.cst438.domain.*;
 import com.cst438.dto.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class AssignmentControllerTest {
+public class AssignmentControllerUnitTest {
 
     String testInstructorEmail = "instructor@csumb.edu";
     String testPassword = "admin";
