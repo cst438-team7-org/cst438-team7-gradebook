@@ -14,17 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import com.cst438.domain.Assignment;
-import com.cst438.domain.AssignmentRepository;
-import com.cst438.domain.Enrollment;
-import com.cst438.domain.EnrollmentRepository;
-import com.cst438.domain.Grade;
-import com.cst438.domain.GradeRepository;
-import com.cst438.domain.Assignment;
-import com.cst438.domain.Section;
-import com.cst438.domain.SectionRepository;
-import com.cst438.domain.User;
-import com.cst438.domain.UserRepository;
+import com.cst438.domain.*;
 import com.cst438.dto.AssignmentDTO;
 import com.cst438.dto.AssignmentStudentDTO;
 import com.cst438.dto.LoginDTO;
