@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
 
@@ -29,6 +30,9 @@ public class EnrollmentControllerUnitTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @MockitoBean
     RegistrarServiceProxy registrar;
@@ -51,13 +55,19 @@ public class EnrollmentControllerUnitTest {
 
         // seed one enrollment for section 1
         int testEnrollmentId = 9999;
+
         Enrollment enrollment = new Enrollment();
+
         enrollment.setEnrollmentId(testEnrollmentId);
         enrollment.setGrade(null);
+
         User student = userRepository.findById(2).orElseThrow();
+
         Section section = sectionRepository.findById(1).orElseThrow();
+
         enrollment.setStudent(student);
         enrollment.setSection(section);
+
         enrollmentRepository.save(enrollment);
 
         try {
@@ -97,6 +107,47 @@ public class EnrollmentControllerUnitTest {
             assertEquals("Fall", dto.semester(), "semester mismatch");
         } finally {
             enrollmentRepository.deleteById(testEnrollmentId);
+        }
+    }
+
+    @Test
+    public void getEnrollmentsNotOwnerTest() throws Exception {
+        // create a second instructor who does not own section 1
+        int secondInstructorId = 9998;
+
+        String secondEmail = "second-instructor@csumb.edu";
+        String secondPassword = "secondpassword";
+
+        User secondInstructor = new User();
+
+        secondInstructor.setId(secondInstructorId);
+        secondInstructor.setName("secondinstructor");
+        secondInstructor.setEmail(secondEmail);
+        secondInstructor.setPassword(passwordEncoder.encode(secondPassword));
+        secondInstructor.setType("INSTRUCTOR");
+
+        userRepository.save(secondInstructor);
+
+        try {
+            // login as the other instructor and obtain a JWT
+            EntityExchangeResult<LoginDTO> login = client.get().uri("/login")
+                    .headers(headers -> headers.setBasicAuth(secondEmail, secondPassword))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody(LoginDTO.class).returnResult();
+
+            String jwt = login.getResponseBody().jwt();
+            assertNotNull(jwt);
+
+            // attempt to view section 1's roster — should be rejected
+            client.get().uri("/sections/1/enrollments")
+                    .headers(headers -> headers.setBearerAuth(jwt))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .exchange()
+                    .expectStatus().isBadRequest();
+        } finally {
+            userRepository.deleteById(secondInstructorId);
         }
     }
 }
