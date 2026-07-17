@@ -1,8 +1,3 @@
-/**
- * Task: Code enrollment controller
- * Assignee: JianMitchell
- */
-
 package com.cst438.controller;
 
 import com.cst438.domain.*;
@@ -82,8 +77,6 @@ public class EnrollmentController {
     @PutMapping("/enrollments")
     public void updateEnrollmentGrade(@Valid @RequestBody List<EnrollmentDTO> dtoList, Principal principal) {
 		// for each EnrollmentDTO
-        //    check that logged in user is instructor for the section
-
         //    update the enrollment grade
         for (int i = 0; i < dtoList.size(); i++) {
             EnrollmentDTO dto = dtoList.get(i);
@@ -92,6 +85,11 @@ public class EnrollmentController {
 
             if (enrollment == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "enrollment not found " + dto.enrollmentId());
+            }
+
+            //    check that logged-in user is instructor for the section
+            if (!enrollment.getSection().getInstructorEmail().equals(principal.getName())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not the instructor for this section");
             }
 
             enrollment.setGrade(dto.grade());
