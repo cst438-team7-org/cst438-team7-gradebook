@@ -16,6 +16,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class EnrollmentControllerUnitTest {
 
@@ -148,6 +153,74 @@ public class EnrollmentControllerUnitTest {
                     .expectStatus().isBadRequest();
         } finally {
             userRepository.deleteById(secondInstructorId);
+        }
+    }
+
+    @Test
+    public void updateEnrollmentGradeTest() throws Exception {
+        // login as ted
+        String instructorEmail = "ted@csumb.edu";
+        String password = "ted2025";
+
+        EntityExchangeResult<LoginDTO> login = client.get().uri("/login")
+                .headers(headers -> headers.setBasicAuth(instructorEmail, password))
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(LoginDTO.class).returnResult();
+
+        String jwt = login.getResponseBody().jwt();
+        assertNotNull(jwt);
+
+        // seed one enrollment for section 1 with an initial null grade
+        int testEnrollmentId = 9997;
+
+        Enrollment enrollment = new Enrollment();
+        enrollment.setEnrollmentId(testEnrollmentId);
+        enrollment.setGrade(null);
+
+        User student = userRepository.findById(2).orElseThrow();
+        Section section = sectionRepository.findById(1).orElseThrow();
+
+        enrollment.setStudent(student);
+        enrollment.setSection(section);
+
+        enrollmentRepository.save(enrollment);
+
+        try {
+            EnrollmentDTO updateDto = new EnrollmentDTO(
+                    testEnrollmentId,
+                    "A",
+                    student.getId(),
+                    student.getName(),
+                    student.getEmail(),
+                    section.getCourse().getCourseId(),
+                    section.getCourse().getTitle(),
+                    section.getSectionId(),
+                    section.getSectionNo(),
+                    section.getBuilding(),
+                    section.getRoom(),
+                    section.getTimes(),
+                    section.getCourse().getCredits(),
+                    section.getTerm().getYear(),
+                    section.getTerm().getSemester()
+            );
+
+            client.put().uri("/enrollments")
+                    .headers(headers -> headers.setBearerAuth(jwt))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(List.of(updateDto))
+                    .exchange()
+                    .expectStatus().isOk();
+
+            // verify the grade was persisted in the gradebook DB
+            Enrollment updatedEnrollment = enrollmentRepository.findById(testEnrollmentId).orElseThrow();
+            assertEquals("A", updatedEnrollment.getGrade(), "grade should have been updated to A");
+
+            // verify Registrar was notified
+            verify(registrar, times(1)).sendMessage(eq("updateEnrollment"), any());
+        } finally {
+            enrollmentRepository.deleteById(testEnrollmentId);
         }
     }
 }
