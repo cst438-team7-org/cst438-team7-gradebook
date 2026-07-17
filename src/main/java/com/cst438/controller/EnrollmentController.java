@@ -41,7 +41,7 @@ public class EnrollmentController {
     @GetMapping("/sections/{sectionNo}/enrollments")
     public List<EnrollmentDTO> getEnrollments(
             @PathVariable("sectionNo") int sectionNo, Principal principal ) {
-				
+
 		// check that the sectionNo belongs to the logged in instructor.
         Section section = sectionRepository.findById(sectionNo).orElse(null);
 
@@ -81,10 +81,25 @@ public class EnrollmentController {
     @PreAuthorize("hasAuthority('SCOPE_ROLE_INSTRUCTOR')")
     @PutMapping("/enrollments")
     public void updateEnrollmentGrade(@Valid @RequestBody List<EnrollmentDTO> dtoList, Principal principal) {
-		// for each EnrollmentDTO 
+		// for each EnrollmentDTO
         //    check that logged in user is instructor for the section
+
         //    update the enrollment grade
+        for (int i = 0; i < dtoList.size(); i++) {
+            EnrollmentDTO dto = dtoList.get(i);
+
+            Enrollment enrollment = enrollmentRepository.findById(dto.enrollmentId()).orElse(null);
+
+            if (enrollment == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "enrollment not found " + dto.enrollmentId());
+            }
+
+            enrollment.setGrade(dto.grade());
+
+            enrollmentRepository.save(enrollment);
+        }
+
         //    send message to Registrar service for grade update
-       
+
     }
 }
