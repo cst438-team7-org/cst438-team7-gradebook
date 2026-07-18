@@ -66,9 +66,11 @@ public class EnrollmentControllerUnitTest {
         enrollment.setEnrollmentId(testEnrollmentId);
         enrollment.setGrade(null);
 
-        User student = userRepository.findById(2).orElseThrow();
+        User student = userRepository.findById(2).orElse(null);
+        assertNotNull(student, "seed user id=2 missing");
 
-        Section section = sectionRepository.findById(1).orElseThrow();
+        Section section = sectionRepository.findById(1).orElse(null);
+        assertNotNull(section, "seed section 1 missing");
 
         enrollment.setStudent(student);
         enrollment.setSection(section);
@@ -179,8 +181,11 @@ public class EnrollmentControllerUnitTest {
         enrollment.setEnrollmentId(testEnrollmentId);
         enrollment.setGrade(null);
 
-        User student = userRepository.findById(2).orElseThrow();
-        Section section = sectionRepository.findById(1).orElseThrow();
+        User student = userRepository.findById(2).orElse(null);
+        assertNotNull(student, "seed user id=2 missing");
+
+        Section section = sectionRepository.findById(1).orElse(null);
+        assertNotNull(section, "seed section 1 missing");
 
         enrollment.setStudent(student);
         enrollment.setSection(section);
@@ -214,13 +219,103 @@ public class EnrollmentControllerUnitTest {
                     .expectStatus().isOk();
 
             // verify the grade was persisted in the gradebook DB
-            Enrollment updatedEnrollment = enrollmentRepository.findById(testEnrollmentId).orElseThrow();
+            Enrollment updatedEnrollment = enrollmentRepository.findById(testEnrollmentId).orElse(null);
+
+            assertNotNull(updatedEnrollment, "enrollment " + testEnrollmentId + " missing after update");
+
             assertEquals("A", updatedEnrollment.getGrade(), "grade should have been updated to A");
 
             // verify Registrar was notified
             verify(registrar, times(1)).sendMessage(eq("updateEnrollment"), any());
         } finally {
             enrollmentRepository.deleteById(testEnrollmentId);
+        }
+    }
+
+    @Test
+    public void updateEnrollmentGradeNotOwnerTest() throws Exception {
+        // create a second instructor who does not own section 1
+        int secondInstructorId = 9996;
+        String secondEmail = "second-instructor-2@csumb.edu";
+        String secondPassword = "secondpassword";
+
+        User secondInstructor = new User();
+        secondInstructor.setId(secondInstructorId);
+        secondInstructor.setName("secondinstructor2");
+        secondInstructor.setEmail(secondEmail);
+        secondInstructor.setPassword(passwordEncoder.encode(secondPassword));
+        secondInstructor.setType("INSTRUCTOR");
+
+        userRepository.save(secondInstructor);
+
+        // seed one enrollment for section 1
+        int testEnrollmentId = 9995;
+
+        Enrollment enrollment = new Enrollment();
+        enrollment.setEnrollmentId(testEnrollmentId);
+        enrollment.setGrade(null);
+
+        User student = userRepository.findById(2).orElse(null);
+        assertNotNull(student, "seed user id=2 missing");
+
+        Section section = sectionRepository.findById(1).orElse(null);
+        assertNotNull(section, "seed section 1 missing");
+
+        enrollment.setStudent(student);
+        enrollment.setSection(section);
+
+        enrollmentRepository.save(enrollment);
+
+        try {
+            // login as the second instructor and obtain a JWT
+            EntityExchangeResult<LoginDTO> login = client.get().uri("/login")
+                    .headers(headers -> headers.setBasicAuth(secondEmail, secondPassword))
+                    .accept(MediaType.APPLICATION_JSON)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody(LoginDTO.class).returnResult();
+
+            String jwt = login.getResponseBody().jwt();
+            assertNotNull(jwt);
+
+            // attempt to grade an enrollment on a section this instructor does not own
+            EnrollmentDTO updateDto = new EnrollmentDTO(
+                    testEnrollmentId,
+                    "A",
+                    student.getId(),
+                    student.getName(),
+                    student.getEmail(),
+                    section.getCourse().getCourseId(),
+                    section.getCourse().getTitle(),
+                    section.getSectionId(),
+                    section.getSectionNo(),
+                    section.getBuilding(),
+                    section.getRoom(),
+                    section.getTimes(),
+                    section.getCourse().getCredits(),
+                    section.getTerm().getYear(),
+                    section.getTerm().getSemester()
+            );
+
+            client.put().uri("/enrollments")
+                    .headers(headers -> headers.setBearerAuth(jwt))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(List.of(updateDto))
+                    .exchange()
+                    .expectStatus().isBadRequest();
+
+            // verify the grade didn't go through and is null
+            Enrollment unchangedEnrollment = enrollmentRepository.findById(testEnrollmentId).orElse(null);
+
+            assertNotNull(unchangedEnrollment, "enrollment " + testEnrollmentId + " missing during rejection check");
+
+            assertNull(unchangedEnrollment.getGrade(), "grade should not have been updated");
+
+            // verify the message didn't go through
+            verify(registrar, times(0)).sendMessage(eq("updateEnrollment"), any());
+        } finally {
+            enrollmentRepository.deleteById(testEnrollmentId);
+            userRepository.deleteById(secondInstructorId);
         }
     }
 }
