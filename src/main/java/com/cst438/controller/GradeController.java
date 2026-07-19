@@ -78,9 +78,23 @@ public class GradeController {
     @PreAuthorize("hasAuthority('SCOPE_ROLE_INSTRUCTOR')")
     public void updateGrades(@Valid @RequestBody List<GradeDTO> dtoList, Principal principal) {
 		// for each GradeDTO
-		// check that the logged in instructor is the owner of the section
-        // update the assignment score
+        for (GradeDTO dto : dtoList) {
+            Grade grade = gradeRepository.findById(dto.gradeId()).orElse(null);
 
+            if (grade == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid grade");
+            }
 
+		    // check that the logged in instructor is the owner of the section
+            Section section = grade.getAssignment().getSection();
+
+            if (!section.getInstructorEmail().equals(principal.getName())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid instructor email");
+            }
+
+            // update the assignment score
+            grade.setScore(dto.score());
+            gradeRepository.save(grade);
+        }
     }
 }
