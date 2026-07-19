@@ -222,6 +222,91 @@ public class GradeControllerUnitTest {
                 .jsonPath("$.errors[?(@=='invalid instructor email')]").exists();
     }
 
+    @Test
+    public void updateGradesTest() {
+        String jwt = login(instructorEmail, instructorPassword);
+
+        GradeDTO updatedGrade = new GradeDTO(
+                existingGradeId,
+                "Grade Student One",
+                firstStudentEmail,
+                "Grade Controller Test Assignment",
+                "cst489",
+                1,
+                88
+        );
+
+        try {
+            client.put()
+                    .uri("/grades")
+                    .headers(headers -> headers.setBearerAuth(jwt))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(List.of(updatedGrade))
+                    .exchange()
+                    .expectStatus().isOk();
+
+            Grade grade = gradeRepository.findById(existingGradeId).orElseThrow();
+            assertEquals(88, grade.getScore());
+        } finally {
+            Grade grade = gradeRepository.findById(existingGradeId).orElseThrow();
+            grade.setScore(95);
+            gradeRepository.save(grade);
+        }
+    }
+
+    @Test
+    public void updateGradesInvalidGradeTest() {
+        String jwt = login(instructorEmail, instructorPassword);
+
+        GradeDTO invalidGrade = new GradeDTO(
+                0,
+                "Grade Student One",
+                firstStudentEmail,
+                "Grade Controller Test Assignment",
+                "cst489",
+                1,
+                88
+        );
+
+        client.put()
+                .uri("/grades")
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(List.of(invalidGrade))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors[?(@=='invalid grade')]").exists();
+    }
+
+    @Test
+    public void updateGradesNotOwnerTest() {
+        String jwt = login(otherInstructorEmail, otherInstructorPassword);
+
+        GradeDTO updatedGrade = new GradeDTO(
+                existingGradeId,
+                "Grade Student One",
+                firstStudentEmail,
+                "Grade Controller Test Assignment",
+                "cst489",
+                1,
+                88
+        );
+
+        client.put()
+                .uri("/grades")
+                .headers(headers -> headers.setBearerAuth(jwt))
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(List.of(updatedGrade))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.errors[?(@=='invalid instructor email')]").exists();
+
+        Grade grade = gradeRepository.findById(existingGradeId).orElseThrow();
+        assertEquals(95, grade.getScore());
+    }
+
     private String login(String email, String password) {
         EntityExchangeResult<LoginDTO> response = client.get()
                 .uri("/login")
